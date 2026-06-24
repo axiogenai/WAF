@@ -862,7 +862,7 @@ function initDomains() {
   let lastScanUrl = '';
 
   const serverHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'your-space.hf.space'
+    ? 'adityax26-waf.hf.space'
     : window.location.host;
 
   const hostEl = document.getElementById('this-server-host');
@@ -1026,31 +1026,49 @@ function initDomains() {
   loadDomains();
 
   // ── Protect-site banner ────────────────────────────────
-  const banner    = document.getElementById('protect-site-banner');
+  const banner     = document.getElementById('protect-site-banner');
   const btnProtect = document.getElementById('btn-protect-this-site');
 
   window._showProtectBanner = function(url, hasWaf) {
     lastScanUrl = url;
-    if (!hasWaf && banner) {
-      banner.classList.remove('hidden');
-    } else if (banner) {
-      banner.classList.add('hidden');
-    }
+    if (!hasWaf && banner) banner.classList.remove('hidden');
+    else if (banner)       banner.classList.add('hidden');
   };
 
-  btnProtect?.addEventListener('click', () => {
-    const modal = document.getElementById('protect-modal');
-    const step1 = document.getElementById('modal-step-1');
-    const step2 = document.getElementById('modal-step-2');
-    modal?.classList.remove('hidden');
-    step1?.classList.remove('hidden');
-    step2?.classList.add('hidden');
-    if (lastScanUrl) {
-      try {
-        const u = new URL(lastScanUrl);
-        document.getElementById('protect-domain').value = 'www.' + u.hostname;
-        document.getElementById('protect-origin').value = lastScanUrl;
-      } catch {}
+  btnProtect?.addEventListener('click', async () => {
+    if (!lastScanUrl) return;
+
+    let domain, origin;
+    try {
+      const u = new URL(lastScanUrl);
+      domain = u.hostname.startsWith('www.') ? u.hostname : 'www.' + u.hostname;
+      origin = lastScanUrl;
+    } catch { toast('error', 'Invalid scanned URL'); return; }
+
+    btnProtect.disabled = true;
+    btnProtect.textContent = 'Enabling...';
+
+    try {
+      const r = await fetch('/api/waf/domains', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain, origin })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+
+      document.getElementById('dns-record-name').textContent  = domain;
+      document.getElementById('dns-record-value').textContent = serverHost;
+      document.getElementById('modal-step-1').classList.add('hidden');
+      document.getElementById('modal-step-2').classList.remove('hidden');
+      document.getElementById('protect-modal').classList.remove('hidden');
+      loadDomains();
+      toast('success', `${domain} is now protected`);
+    } catch (e) {
+      toast('error', 'Registration failed', e.message);
+    } finally {
+      btnProtect.disabled = false;
+      btnProtect.textContent = 'Enable WAF Protection';
     }
   });
 
