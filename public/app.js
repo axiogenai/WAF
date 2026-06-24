@@ -766,141 +766,7 @@ function initHardener() {
 // PROTECT TAB — WAF PROXY
 // ═══════════════════════════════════════════════════════
 
-function initProtect() {
-  let proxyRunning  = false;
-  let statsInterval = null;
-  let logInterval   = null;
-  let blockedOnly   = false;
 
-  const dot    = document.getElementById('proxy-dot');
-  const stext  = document.getElementById('proxy-status-text');
-  const pbadge = document.getElementById('proxy-state-badge');
-  const ptog   = document.getElementById('btn-proxy-toggle');
-
-  function setProxyState(running) {
-    proxyRunning = running;
-    dot.className    = 'proxy-dot' + (running ? ' active' : '');
-    stext.textContent = running ? 'Proxy active' : 'Proxy off';
-    pbadge.textContent = running ? 'Running' : 'Stopped';
-    pbadge.className  = running ? 'badge badge-green' : 'badge badge-default';
-    ptog.textContent  = running ? 'Stop WAF' : 'Start WAF';
-    ptog.className    = running ? 'btn btn-danger' : 'btn btn-success';
-  }
-
-  async function saveConfig() {
-    const target = document.getElementById('proxy-target-input').value.trim();
-    const port   = parseInt(document.getElementById('proxy-port-input').value) || 8080;
-    const rules  = {
-      sqli:             document.getElementById('rule-sqli').checked,
-      xss:              document.getElementById('rule-xss').checked,
-      pathTraversal:    document.getElementById('rule-pathTraversal').checked,
-      rfiLfi:           document.getElementById('rule-rfiLfi').checked,
-      commandInjection: document.getElementById('rule-commandInjection').checked,
-      botDetection:     document.getElementById('rule-botDetection').checked,
-    };
-    await fetch('/api/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proxyTarget: target, proxyPort: port, rules })
-    });
-  }
-
-  ptog.addEventListener('click', async () => {
-    await saveConfig();
-    ptog.disabled = true;
-    try {
-      const r = await fetch('/api/proxy/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      setProxyState(data.proxyActive);
-      if (data.proxyActive) {
-        toast('success', 'WAF Proxy started', `Listening on port ${document.getElementById('proxy-port-input').value}`);
-        startPolling();
-      } else {
-        toast('info', 'WAF Proxy stopped');
-        stopPolling();
-      }
-    } catch (e) {
-      toast('error', 'Proxy toggle failed', e.message);
-    } finally {
-      ptog.disabled = false;
-    }
-  });
-
-  function startPolling() {
-    statsInterval = setInterval(fetchStats, 2000);
-    logInterval   = setInterval(fetchLogs,  2000);
-  }
-  function stopPolling() {
-    clearInterval(statsInterval);
-    clearInterval(logInterval);
-  }
-
-  async function fetchStats() {
-    try {
-      const r = await fetch('/api/status');
-      const d = await r.json();
-      const s = d.stats || {};
-      document.getElementById('stat-total').textContent   = s.totalRequests   || 0;
-      document.getElementById('stat-allowed').textContent = s.allowedRequests  || 0;
-      document.getElementById('stat-blocked').textContent = s.blockedRequests  || 0;
-      document.getElementById('stat-rate').textContent    = s.rateLimited     || 0;
-      setProxyState(d.proxyActive);
-    } catch {}
-  }
-
-  async function fetchLogs() {
-    try {
-      const filter = blockedOnly ? '&filter=blocked' : '';
-      const r = await fetch(`/api/logs?limit=50${filter}`);
-      const logs = await r.json();
-      const tbody = document.getElementById('log-tbody');
-      if (!logs.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:20px">${blockedOnly ? 'No blocked requests' : 'No requests yet'}</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = logs.map(l => `
-        <tr class="${l.blocked ? 'blocked' : ''}">
-          <td>${fmtTime(l.timestamp || l.id)}</td>
-          <td>${esc(l.method || 'GET')}</td>
-          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.path || l.url || '/')}</td>
-          <td>${esc(l.ip || '-')}</td>
-          <td><span class="log-blocked-badge ${l.blocked ? 'yes' : 'no'}">${l.blocked ? 'Blocked' : 'Allowed'}</span></td>
-          <td>${esc(l.category || '-')}</td>
-        </tr>`).join('');
-    } catch {}
-  }
-
-  document.getElementById('chk-blocked-only').addEventListener('change', e => {
-    blockedOnly = e.target.checked;
-    fetchLogs();
-  });
-
-  document.getElementById('btn-reset-stats').addEventListener('click', async () => {
-    await fetch('/api/stats/reset', { method: 'POST' });
-    toast('info', 'Stats reset');
-    fetchStats();
-    fetchLogs();
-  });
-
-  // Load initial status
-  fetch('/api/status').then(r => r.json()).then(d => {
-    setProxyState(d.proxyActive);
-    if (d.config) {
-      document.getElementById('proxy-target-input').value = d.config.proxyTarget || '';
-      document.getElementById('proxy-port-input').value   = d.config.proxyPort || 8080;
-      if (d.config.rules) {
-        Object.entries(d.config.rules).forEach(([k, v]) => {
-          const el = document.getElementById('rule-' + k);
-          if (el) el.checked = v;
-        });
-      }
-    }
-    if (d.proxyActive) startPolling();
-    fetchStats();
-    fetchLogs();
-  }).catch(() => {});
-}
 
 // ═══════════════════════════════════════════════════════
 // PROTECT SITES / DOMAINS TAB
@@ -1143,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initScanModeTabs();
   initScanner();
   initHardener();
-  initProtect();
   initDomains();
   initConfigPanel();
 });
+
