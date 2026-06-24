@@ -1353,3 +1353,74 @@ input, textarea, select { font-family: var(--font); }
 .domain-actions { display: flex; gap: 6px; }
 .domain-dns-panel { border-top: 1px solid var(--border); padding: 14px; background: var(--bg4); }
 
+/* ══════════════════════════════════════════════════════
+   CONFIG PANEL
+   ══════════════════════════════════════════════════════ */
+.badge-green {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--green-border);
+}
+
+.config-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+.config-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+  margin-bottom: -1px;
+}
+.config-tab:hover { color: var(--text); }
+.config-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+.config-code-wrap {
+  position: relative;
+  background: #010409;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+.config-code {
+  margin: 0;
+  padding: 16px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  color: #c9d1d9;
+  white-space: pre;
+  overflow-x: auto;
+}
+.config-code code { background: none; padding: 0; font-size: inherit; color: inherit; }
+.copy-config-btn {
+  position: sticky;
+  top: 10px;
+  float: right;
+  margin: 10px 12px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: color .15s, background .15s;
+  z-index: 2;
+}
+.copy-config-btn:hover { color: var(--text); background: var(--bg5); }
+

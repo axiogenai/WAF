@@ -251,15 +251,64 @@ function showScanResults(data, sourceLabel) {
   renderSummaryGrid(findings);
   renderFindings(findings, sourceLabel);
 
-  const scanUrl  = data.url || data.target || '';
-  const scanned  = data.filesScanned ? `${data.filesScanned} files scanned` : (scanUrl ? scanUrl : sourceLabel || 'scan');
+  const scanUrl = data.url || data.target || '';
+  const scanned = data.filesScanned ? `${data.filesScanned} files scanned` : (scanUrl ? scanUrl : sourceLabel || 'scan');
   document.getElementById('result-headline').textContent = `${findings.length} issue${findings.length === 1 ? '' : 's'} found`;
   document.getElementById('result-sub').textContent = scanned;
 
   const headers = data.headers || {};
   const hasWaf  = !!(headers['x-protected-by'] || headers['cf-ray'] || headers['x-sucuri-id'] || headers['x-cdn']);
   if (window._showProtectBanner && scanUrl) window._showProtectBanner(scanUrl, hasWaf);
+
+  if (findings.length > 0) loadDeployConfigs(scanUrl, findings);
 }
+
+let _deployConfigs = {};
+let _activeConfigTab = 'nginx';
+
+async function loadDeployConfigs(url, findings) {
+  const panel = document.getElementById('deploy-fix-panel');
+  if (!panel) return;
+  panel.classList.remove('hidden');
+  document.getElementById('config-code-content').textContent = 'Generating configs...';
+
+  try {
+    const r = await fetch('/api/scan/configs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, findings })
+    });
+    _deployConfigs = await r.json();
+    renderConfigTab(_activeConfigTab);
+  } catch {
+    document.getElementById('config-code-content').textContent = '# Error generating config. Try again.';
+  }
+}
+
+function renderConfigTab(tab) {
+  _activeConfigTab = tab;
+  const el = document.getElementById('config-code-content');
+  if (el) el.textContent = _deployConfigs[tab] || '# Not available';
+  document.querySelectorAll('.config-tab').forEach(b => b.classList.toggle('active', b.dataset.cfg === tab));
+}
+
+function initConfigPanel() {
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('config-tab')) renderConfigTab(e.target.dataset.cfg);
+  });
+
+  document.getElementById('btn-copy-config')?.addEventListener('click', async () => {
+    const code = document.getElementById('config-code-content')?.textContent || '';
+    try {
+      await navigator.clipboard.writeText(code);
+      const btn = document.getElementById('btn-copy-config');
+      const orig = btn.innerHTML;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+      setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    } catch { toast('error', 'Copy failed — select text manually'); }
+  });
+}
+
 
 // ═══════════════════════════════════════════════════════
 // SCANNER TAB
@@ -1096,4 +1145,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initHardener();
   initProtect();
   initDomains();
+  initConfigPanel();
 });

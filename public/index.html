@@ -225,6 +225,34 @@
           </div>
           <button class="btn btn-success" id="btn-protect-this-site">Enable WAF Protection</button>
         </div>
+
+        <!-- Deploy Fix Panel -->
+        <div id="deploy-fix-panel" class="card mt-2 hidden">
+          <div class="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Deploy Fix — Copy &amp; Paste Security Config
+            </h2>
+            <span class="badge badge-green">Ready to deploy</span>
+          </div>
+          <div class="card-body" style="padding-bottom:0">
+            <p style="font-size:0.8rem;color:var(--muted);margin:0 0 12px">Generated from your scan results. Pick your platform and paste the config:</p>
+            <div class="config-tabs">
+              <button class="config-tab active" data-cfg="nginx">Nginx</button>
+              <button class="config-tab" data-cfg="apache">Apache</button>
+              <button class="config-tab" data-cfg="cloudflare">Cloudflare</button>
+              <button class="config-tab" data-cfg="modsecurity">ModSecurity</button>
+              <button class="config-tab" data-cfg="html">HTML Tags</button>
+            </div>
+          </div>
+          <div class="config-code-wrap">
+            <button class="copy-config-btn" id="btn-copy-config" title="Copy to clipboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+            <pre class="config-code" id="config-code-block"><code id="config-code-content">Loading...</code></pre>
+          </div>
+        </div>
       </div>
     </div>
 

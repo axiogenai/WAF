@@ -18,6 +18,8 @@ try { codeHardener   = require('./modules/code-hardener');   } catch(e) { consol
 try { reportGenerator = require('./modules/report-generator'); } catch(e) { console.warn('report-generator not loaded:', e.message); }
 try { domainRegistry = require('./modules/domain-registry'); } catch(e) { console.warn('domain-registry not loaded:', e.message); }
 try { wafProxyCore   = require('./modules/waf-proxy-core');  } catch(e) { console.warn('waf-proxy-core not loaded:', e.message); }
+let configGenerator;
+try { configGenerator = require('./modules/config-generator'); } catch(e) { console.warn('config-generator not loaded:', e.message); }
 
 const app = express();
 const DASHBOARD_PORT = parseInt(process.env.PORT || '3000', 10);
@@ -1101,6 +1103,21 @@ app.get('/api/waf/logs', (req, res) => {
 app.get('/api/waf/stats', (req, res) => {
   if (!domainRegistry) return res.json([]);
   res.json(domainRegistry.list());
+});
+
+app.post('/api/scan/configs', (req, res) => {
+  if (!configGenerator) return res.status(500).json({ error: 'Config generator not loaded.' });
+  const { url, findings } = req.body;
+  if (!findings || !Array.isArray(findings)) return res.status(400).json({ error: 'findings array required.' });
+  let domain = 'yourdomain.com';
+  try { domain = new URL(url || 'https://yourdomain.com').hostname; } catch {}
+  res.json({
+    nginx:       configGenerator.generateNginxConfig(domain, findings),
+    apache:      configGenerator.generateApacheConfig(domain, findings),
+    cloudflare:  configGenerator.generateCloudflareHeaders(domain, findings),
+    html:        configGenerator.generateHtmlMetaTags(domain, findings),
+    modsecurity: configGenerator.generateModSecurityRules(domain, findings),
+  });
 });
 
 app.post('/api/waf/domains/:domain/rules', (req, res) => {
