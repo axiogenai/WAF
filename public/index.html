@@ -40,12 +40,7 @@
         </svg>
         <span>Hardener</span>
       </button>
-      <button class="nav-btn" data-tab="tab-protect" id="nav-protect">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-        <span>WAF Proxy</span>
-      </button>
+
       <button class="nav-btn" data-tab="tab-domains" id="nav-domains">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
@@ -55,12 +50,8 @@
       </button>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="proxy-status">
-        <div class="proxy-dot" id="proxy-dot"></div>
-        <span id="proxy-status-text">Proxy off</span>
-      </div>
     </div>
+
   </aside>
 
   <!-- ═══════════════════════════════════════════
@@ -462,125 +453,7 @@
       </div>
     </div>
 
-    <!-- ── PROTECT TAB ───────────────────────── -->
-    <div class="tab" id="tab-protect">
-      <div class="page-header">
-        <h1>WAF Proxy</h1>
-        <p>Run a local Web Application Firewall that inspects and filters real traffic to any target website</p>
-      </div>
 
-      <!-- Config card -->
-      <div class="card">
-        <div class="card-header">
-          <h2>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-            Proxy Configuration
-          </h2>
-          <div style="display:flex;gap:8px;align-items:center">
-            <span id="proxy-state-badge" class="badge badge-default">Stopped</span>
-            <button class="btn btn-success" id="btn-proxy-toggle">Start WAF</button>
-          </div>
-        </div>
-        <div class="card-body">
-          <div style="display:grid;grid-template-columns:1fr auto;gap:12px">
-            <div class="form-group" style="margin:0">
-              <label class="form-label" for="proxy-target-input">Target URL</label>
-              <input type="url" id="proxy-target-input" class="input" placeholder="https://your-website.com">
-              <span class="form-hint">All traffic from port 8080 will be proxied and inspected before reaching this URL.</span>
-            </div>
-            <div class="form-group" style="margin:0">
-              <label class="form-label" for="proxy-port-input">Listen Port</label>
-              <input type="number" id="proxy-port-input" class="input" value="8080" min="1024" max="65535" style="width:110px">
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div style="font-size:0.77rem;color:var(--muted);margin-bottom:10px;font-weight:600">WAF Rules</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px" id="rules-grid">
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
-              <input type="checkbox" class="checkbox-native" id="rule-sqli" checked> SQL Injection
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
-              <input type="checkbox" class="checkbox-native" id="rule-xss" checked> Cross-Site Scripting
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
-              <input type="checkbox" class="checkbox-native" id="rule-pathTraversal" checked> Path Traversal
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
-              <input type="checkbox" class="checkbox-native" id="rule-rfiLfi" checked> RFI / LFI
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
-              <input type="checkbox" class="checkbox-native" id="rule-commandInjection" checked> Command Injection
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
-              <input type="checkbox" class="checkbox-native" id="rule-botDetection" checked> Bot Detection
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stats -->
-      <div class="card mt-2">
-        <div class="card-header">
-          <h2>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Live Statistics
-          </h2>
-          <button class="btn btn-ghost btn-sm" id="btn-reset-stats">Reset</button>
-        </div>
-        <div class="card-body">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-card-value" id="stat-total">0</div>
-              <div class="stat-card-label">Total Requests</div>
-            </div>
-            <div class="stat-card stat-allowed">
-              <div class="stat-card-value" id="stat-allowed">0</div>
-              <div class="stat-card-label">Allowed</div>
-            </div>
-            <div class="stat-card stat-blocked">
-              <div class="stat-card-value" id="stat-blocked">0</div>
-              <div class="stat-card-label">Blocked</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card-value" id="stat-rate">0</div>
-              <div class="stat-card-label">Rate Limited</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Threat log -->
-      <div class="card mt-2">
-        <div class="card-header">
-          <h2>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Request Log
-          </h2>
-          <label style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted)">
-            <input type="checkbox" class="checkbox-native" id="chk-blocked-only"> Blocked only
-          </label>
-        </div>
-        <div class="log-table-wrap">
-          <table class="log-table" id="log-table">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Method</th>
-                <th>Path</th>
-                <th>IP</th>
-                <th>Status</th>
-                <th>Threat</th>
-              </tr>
-            </thead>
-            <tbody id="log-tbody">
-              <tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">Start the WAF proxy to see live traffic</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
 
     <!-- ── DOMAINS TAB ─────────────────────────────────────────── -->
     <div class="tab" id="tab-domains">
