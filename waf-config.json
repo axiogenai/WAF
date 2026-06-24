@@ -1,0 +1,20 @@
+{
+  "proxyTarget": "https://github.com/axiogenai/blockchainforge",
+  "proxyPort": 8080,
+  "rules": {
+    "sqli": true,
+    "xss": true,
+    "pathTraversal": true,
+    "rfiLfi": true,
+    "commandInjection": true,
+    "protocolViolation": true,
+    "botDetection": true
+  },
+  "rateLimiter": {
+    "windowMs": 60000,
+    "maxRequests": 100,
+    "banThreshold": 3,
+    "banDurationMs": 900000
+  },
+  "proxyActive": true
+}

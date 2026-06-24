@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShieldWall — Security Intelligence Platform</title>
+  <meta name="description" content="Scan live websites and source code for vulnerabilities. Generate security patches and deploy a WAF proxy to protect your apps.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══════════════════════════════════════════
+       SIDEBAR
+       ═══════════════════════════════════════════ -->
+  <aside class="sidebar" role="navigation" aria-label="Main navigation">
+    <div class="sidebar-brand">
+      <div class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">ShieldWall</div>
+        <div class="brand-tag">Security Platform</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-label">Tools</div>
+      <button class="nav-btn active" data-tab="tab-scanner" id="nav-scanner" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <span>Scanner</span>
+      </button>
+      <button class="nav-btn" data-tab="tab-hardener" id="nav-hardener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+        <span>Hardener</span>
+      </button>
+      <button class="nav-btn" data-tab="tab-protect" id="nav-protect">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <span>WAF Proxy</span>
+      </button>
+      <button class="nav-btn" data-tab="tab-domains" id="nav-domains">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span>Protect Sites</span>
+        <span class="nav-badge" id="domains-nav-badge">0</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="proxy-status">
+        <div class="proxy-dot" id="proxy-dot"></div>
+        <span id="proxy-status-text">Proxy off</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN
+       ═══════════════════════════════════════════ -->
+  <main class="main" role="main">
+
+    <!-- ── SCANNER TAB ───────────────────────── -->
+    <div class="tab active" id="tab-scanner">
+      <div class="page-header">
+        <h1>Vulnerability Scanner</h1>
+        <p>Scan a live website URL or upload source code files to detect security issues</p>
+      </div>
+
+      <div class="card">
+        <div class="scan-mode-tabs" role="tablist">
+          <button class="scan-mode-tab active" role="tab" aria-selected="true" data-panel="panel-url" id="mode-url">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            Live URL
+          </button>
+          <button class="scan-mode-tab" role="tab" aria-selected="false" data-panel="panel-github" id="mode-github">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.03c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.83 1.24 1.83 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6.02 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub Repo
+          </button>
+          <button class="scan-mode-tab" role="tab" aria-selected="false" data-panel="panel-files" id="mode-files">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+            Upload Files
+          </button>
+        </div>
+
+        <div class="scan-panels">
+
+          <!-- URL Panel -->
+          <div class="scan-panel active" id="panel-url" role="tabpanel">
+            <div class="form-group">
+              <label class="form-label" for="url-scan-input">Target URL</label>
+              <div class="input-group">
+                <div class="input-group-prefix">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <input type="url" id="url-scan-input" class="input" placeholder="https://example.com" autocomplete="off" spellcheck="false">
+                <button class="btn btn-primary" id="btn-scan-url">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  Scan
+                </button>
+              </div>
+              <span class="form-hint">Scans security headers, TLS, cookies, CORS, exposed files, and more. Works on any public URL.</span>
+            </div>
+            <div id="url-progress" class="progress-bar-wrap hidden">
+              <div class="progress-bar-header">
+                <span class="progress-bar-status" id="url-progress-status">Starting...</span>
+                <span class="progress-bar-pct" id="url-progress-pct">0%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="url-progress-fill"></div></div>
+            </div>
+          </div>
+
+          <!-- GitHub Panel -->
+          <div class="scan-panel" id="panel-github" role="tabpanel">
+            <div class="form-group">
+              <label class="form-label" for="github-scan-input">GitHub Repository URL</label>
+              <div class="input-group">
+                <div class="input-group-prefix">
+                  <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.03c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.83 1.24 1.83 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6.02 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                </div>
+                <input type="url" id="github-scan-input" class="input" placeholder="https://github.com/user/repository" autocomplete="off" spellcheck="false">
+                <button class="btn btn-primary" id="btn-scan-github">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  Clone & Scan
+                </button>
+              </div>
+              <span class="form-hint">Clones the repository and analyzes all source code files for vulnerabilities.</span>
+            </div>
+            <div id="github-progress" class="progress-bar-wrap hidden">
+              <div class="progress-bar-header">
+                <span class="progress-bar-status" id="github-progress-status">Cloning...</span>
+                <span class="progress-bar-pct" id="github-progress-pct">0%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="github-progress-fill"></div></div>
+            </div>
+          </div>
+
+          <!-- Files Panel -->
+          <div class="scan-panel" id="panel-files" role="tabpanel">
+            <div id="scanner-dropzone" class="dropzone" role="button" tabindex="0" aria-label="Drop source code files here or click to browse">
+              <div class="drop-icon-wrap">
+                <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <h4>Drop source files here</h4>
+              <p>or <strong>click to browse</strong></p>
+              <small>.js .py .php .java .go .rb .html .ts and more</small>
+              <input type="file" id="scanner-file-input" multiple hidden accept=".js,.ts,.jsx,.tsx,.py,.php,.java,.go,.rb,.html,.htm,.cs,.cpp,.c,.vue,.mjs,.cjs">
+            </div>
+            <div id="scanner-file-list" class="file-list"></div>
+            <button class="btn btn-primary btn-full mt-2" id="btn-analyze-code" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Analyze Code
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Scan Results -->
+      <div id="scan-results" class="hidden mt-2">
+        <div class="card">
+          <div class="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+              Scan Results
+            </h2>
+            <button class="btn btn-default btn-sm" id="btn-download-report">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Report
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="results-header">
+              <div class="grade-ring" aria-label="Security grade">
+                <svg viewBox="0 0 42 42">
+                  <circle class="grade-ring-bg" cx="21" cy="21" r="16" stroke-dasharray="100.5" stroke-dashoffset="0"/>
+                  <circle class="grade-ring-fill" id="grade-ring-fill" cx="21" cy="21" r="16" stroke-dasharray="100.5" stroke-dashoffset="100.5"/>
+                </svg>
+                <div class="grade-letter" id="result-grade">—</div>
+              </div>
+              <div class="results-meta">
+                <h3 id="result-headline">No scan run yet</h3>
+                <div class="result-sub" id="result-sub">Run a scan above to see results</div>
+              </div>
+            </div>
+            <div class="summary-grid" id="result-summary"></div>
+          </div>
+        </div>
+
+        <div class="card mt-2">
+          <div class="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Findings
+            </h2>
+            <span class="badge badge-default" id="findings-count">0 issues</span>
+          </div>
+          <div id="findings-list" class="findings-list" style="padding:8px 10px">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <h4>No results yet</h4>
+              <p>Run a scan to see findings</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Protect this site banner -->
+        <div id="protect-site-banner" class="protect-banner hidden mt-2">
+          <div class="protect-banner-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="protect-banner-body">
+            <div class="protect-banner-title">No WAF detected on this site</div>
+            <div class="protect-banner-sub">ShieldWall can act as a real firewall — all traffic flows through it before reaching your server</div>
+          </div>
+          <button class="btn btn-success" id="btn-protect-this-site">Enable WAF Protection</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HARDENER TAB ──────────────────────── -->
+    <div class="tab" id="tab-hardener">
+      <div class="page-header">
+        <h1>Code Hardener</h1>
+        <p>Detect your framework and generate security patches. Works with file uploads, GitHub repos, or live URLs.</p>
+      </div>
+
+      <div class="card">
+        <div class="scan-mode-tabs" role="tablist">
+          <button class="scan-mode-tab active" role="tab" aria-selected="true" data-panel="panel-harden-files" id="hmode-files">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+            Upload Files
+          </button>
+          <button class="scan-mode-tab" role="tab" aria-selected="false" data-panel="panel-harden-github" id="hmode-github">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.03c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.83 1.24 1.83 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6.02 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub Repo
+          </button>
+          <button class="scan-mode-tab" role="tab" aria-selected="false" data-panel="panel-harden-url" id="hmode-url">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            Live URL
+          </button>
+        </div>
+
+        <div class="scan-panels">
+
+          <!-- Files panel -->
+          <div class="scan-panel active" id="panel-harden-files" role="tabpanel">
+            <div id="hardener-dropzone" class="dropzone" role="button" tabindex="0" aria-label="Drop project files here">
+              <div class="drop-icon-wrap">
+                <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <h4>Drop project files here</h4>
+              <p>Include <strong>package.json</strong>, <strong>requirements.txt</strong>, or main source files</p>
+              <small>ShieldWall detects your framework and generates targeted security patches</small>
+              <input type="file" id="hardener-file-input" multiple hidden>
+            </div>
+            <div id="hardener-file-list" class="file-list"></div>
+            <button class="btn btn-primary btn-full mt-2" id="btn-harden" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Detect &amp; Harden
+            </button>
+          </div>
+
+          <!-- GitHub panel -->
+          <div class="scan-panel" id="panel-harden-github" role="tabpanel">
+            <div class="form-group">
+              <label class="form-label" for="harden-github-input">GitHub Repository URL</label>
+              <div class="input-group">
+                <div class="input-group-prefix">
+                  <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.03c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.83 1.24 1.83 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6.02 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                </div>
+                <input type="url" id="harden-github-input" class="input" placeholder="https://github.com/user/repository" autocomplete="off" spellcheck="false">
+                <button class="btn btn-primary" id="btn-harden-github">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Harden Repo
+                </button>
+              </div>
+              <span class="form-hint">Clones the repo, detects framework, and generates security patches for the full codebase.</span>
+            </div>
+            <div id="harden-github-progress" class="progress-bar-wrap hidden">
+              <div class="progress-bar-header">
+                <span class="progress-bar-status" id="harden-github-progress-status">Cloning...</span>
+                <span class="progress-bar-pct" id="harden-github-progress-pct">0%</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="harden-github-progress-fill"></div></div>
+            </div>
+          </div>
+
+          <!-- Live URL panel -->
+          <div class="scan-panel" id="panel-harden-url" role="tabpanel">
+            <div class="form-group">
+              <label class="form-label" for="harden-url-input">Published Website URL</label>
+              <div class="input-group">
+                <div class="input-group-prefix">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <input type="url" id="harden-url-input" class="input" placeholder="https://myapp.com" autocomplete="off" spellcheck="false">
+                <button class="btn btn-primary" id="btn-harden-url">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Generate Patches
+                </button>
+              </div>
+              <span class="form-hint">ShieldWall probes the live URL to detect your stack and generates a <strong>server configuration remediation guide</strong> — specific header, nginx/Apache, and code changes to apply.</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Harden Results -->
+      <div id="harden-results" class="hidden mt-2">
+
+        <!-- Framework Detection -->
+        <div class="card">
+          <div class="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              Framework Detected
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="framework-detect">
+              <div class="fw-badge" id="fw-icon">⚙️</div>
+              <div class="fw-info">
+                <div class="fw-name" id="fw-name">Detecting...</div>
+                <div class="fw-sub" id="fw-sub">Analyzing project structure</div>
+                <div class="conf-bar-track"><div class="conf-bar-fill" id="conf-fill" style="width:0%"></div></div>
+                <div class="conf-label" id="conf-label">0% confidence</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patches -->
+        <div class="card mt-2" id="patches-card">
+          <div class="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              Security Patches
+            </h2>
+            <span class="badge badge-blue" id="patches-badge">0 patches</span>
+          </div>
+
+          <div class="select-all-row" id="select-all-row">
+            <label>
+              <input type="checkbox" id="chk-select-all" class="checkbox-native" checked>
+              Select all patches
+            </label>
+            <span class="badge badge-default" id="selected-count-badge">0 selected</span>
+          </div>
+
+          <div id="patches-container" style="padding:10px;display:flex;flex-direction:column;gap:4px"></div>
+
+          <!-- Action footer -->
+          <div class="patch-actions-footer" id="patch-actions-footer">
+            <button class="patch-action-btn patch-action-download" id="btn-download-patched">
+              <div class="patch-action-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </div>
+              <div class="patch-action-text">
+                <span class="patch-action-label">Download ZIP</span>
+                <span class="patch-action-sub">Patched source files</span>
+              </div>
+            </button>
+            <button class="patch-action-btn patch-action-disk" id="btn-show-local-apply">
+              <div class="patch-action-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="patch-action-text">
+                <span class="patch-action-label">Apply to Disk</span>
+                <span class="patch-action-sub">Write files locally</span>
+              </div>
+            </button>
+            <button class="patch-action-btn patch-action-github" id="btn-show-github-push">
+              <div class="patch-action-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.03c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.83 1.24 1.83 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6.02 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              </div>
+              <div class="patch-action-text">
+                <span class="patch-action-label">Push to GitHub</span>
+                <span class="patch-action-sub">Commit &amp; push changes</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Apply to Disk (collapsible) -->
+          <div id="local-apply-section" class="hidden collapsible-section">
+            <div class="form-group">
+              <div class="form-label">Project Directory Path</div>
+              <div class="input-row">
+                <input id="local-project-path" type="text" class="input" placeholder="e.g. C:\Users\you\projects\my-app">
+                <button class="btn btn-primary" id="btn-write-local">Apply</button>
+              </div>
+              <span class="form-hint">Enter the absolute path to your project folder. ShieldWall will write patches directly into your source files.</span>
+            </div>
+          </div>
+
+          <!-- GitHub Push (collapsible) -->
+          <div id="github-push-container" class="hidden collapsible-section">
+            <div class="form-group">
+              <label class="form-label" for="github-pat">
+                Personal Access Token (PAT)
+                <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">Generate Token ↗</a>
+              </label>
+              <input type="password" id="github-pat" class="input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+            </div>
+            <div class="git-push-form-row" style="display:flex;gap:8px">
+              <div class="form-group" style="flex:1">
+                <label class="form-label" for="github-branch">Branch</label>
+                <input type="text" id="github-branch" class="input" value="main">
+              </div>
+              <div class="form-group" style="flex:3">
+                <label class="form-label" for="github-commit-msg">Commit Message</label>
+                <input type="text" id="github-commit-msg" class="input" value="security: apply ShieldWall hardening patches">
+              </div>
+            </div>
+            <button class="btn btn-primary btn-full" id="btn-github-push">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Commit &amp; Push Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROTECT TAB ───────────────────────── -->
+    <div class="tab" id="tab-protect">
+      <div class="page-header">
+        <h1>WAF Proxy</h1>
+        <p>Run a local Web Application Firewall that inspects and filters real traffic to any target website</p>
+      </div>
+
+      <!-- Config card -->
+      <div class="card">
+        <div class="card-header">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+            Proxy Configuration
+          </h2>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span id="proxy-state-badge" class="badge badge-default">Stopped</span>
+            <button class="btn btn-success" id="btn-proxy-toggle">Start WAF</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:12px">
+            <div class="form-group" style="margin:0">
+              <label class="form-label" for="proxy-target-input">Target URL</label>
+              <input type="url" id="proxy-target-input" class="input" placeholder="https://your-website.com">
+              <span class="form-hint">All traffic from port 8080 will be proxied and inspected before reaching this URL.</span>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label" for="proxy-port-input">Listen Port</label>
+              <input type="number" id="proxy-port-input" class="input" value="8080" min="1024" max="65535" style="width:110px">
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div style="font-size:0.77rem;color:var(--muted);margin-bottom:10px;font-weight:600">WAF Rules</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px" id="rules-grid">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
+              <input type="checkbox" class="checkbox-native" id="rule-sqli" checked> SQL Injection
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
+              <input type="checkbox" class="checkbox-native" id="rule-xss" checked> Cross-Site Scripting
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
+              <input type="checkbox" class="checkbox-native" id="rule-pathTraversal" checked> Path Traversal
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
+              <input type="checkbox" class="checkbox-native" id="rule-rfiLfi" checked> RFI / LFI
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
+              <input type="checkbox" class="checkbox-native" id="rule-commandInjection" checked> Command Injection
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.77rem;color:var(--text2);cursor:pointer">
+              <input type="checkbox" class="checkbox-native" id="rule-botDetection" checked> Bot Detection
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="card mt-2">
+        <div class="card-header">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Live Statistics
+          </h2>
+          <button class="btn btn-ghost btn-sm" id="btn-reset-stats">Reset</button>
+        </div>
+        <div class="card-body">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-value" id="stat-total">0</div>
+              <div class="stat-card-label">Total Requests</div>
+            </div>
+            <div class="stat-card stat-allowed">
+              <div class="stat-card-value" id="stat-allowed">0</div>
+              <div class="stat-card-label">Allowed</div>
+            </div>
+            <div class="stat-card stat-blocked">
+              <div class="stat-card-value" id="stat-blocked">0</div>
+              <div class="stat-card-label">Blocked</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-value" id="stat-rate">0</div>
+              <div class="stat-card-label">Rate Limited</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Threat log -->
+      <div class="card mt-2">
+        <div class="card-header">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Request Log
+          </h2>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted)">
+            <input type="checkbox" class="checkbox-native" id="chk-blocked-only"> Blocked only
+          </label>
+        </div>
+        <div class="log-table-wrap">
+          <table class="log-table" id="log-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Method</th>
+                <th>Path</th>
+                <th>IP</th>
+                <th>Status</th>
+                <th>Threat</th>
+              </tr>
+            </thead>
+            <tbody id="log-tbody">
+              <tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">Start the WAF proxy to see live traffic</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DOMAINS TAB ─────────────────────────────────────────── -->
+    <div class="tab" id="tab-domains">
+      <div class="page-header">
+        <h1>Protected Sites</h1>
+        <p>Register domains to route all their traffic through ShieldWall's WAF in the cloud</p>
+      </div>
+
+      <!-- How it works -->
+      <div class="card">
+        <div class="card-header">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            How It Works
+          </h2>
+        </div>
+        <div class="card-body">
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-step-num">1</div>
+              <div class="flow-step-body">
+                <div class="flow-step-title">Register your domain</div>
+                <div class="flow-step-sub">Enter your www domain and your real server origin URL</div>
+              </div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+              <div class="flow-step-num">2</div>
+              <div class="flow-step-body">
+                <div class="flow-step-title">Add a DNS CNAME</div>
+                <div class="flow-step-sub">Point <code>www.yourdomain.com</code> to this ShieldWall server</div>
+              </div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+              <div class="flow-step-num">3</div>
+              <div class="flow-step-body">
+                <div class="flow-step-title">Traffic is protected</div>
+                <div class="flow-step-sub">All requests are inspected, attacks blocked, clean traffic forwarded</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Register new domain -->
+      <div class="card mt-2">
+        <div class="card-header">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Register New Domain
+          </h2>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
+            <div class="form-group" style="margin:0">
+              <label class="form-label" for="reg-domain">Domain to protect</label>
+              <input type="text" id="reg-domain" class="input" placeholder="www.example.com" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label" for="reg-origin">Origin server URL</label>
+              <input type="url" id="reg-origin" class="input" placeholder="https://real-server.com" autocomplete="off" spellcheck="false">
+            </div>
+            <button class="btn btn-primary" id="btn-add-domain" style="height:36px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Protect
+            </button>
+          </div>
+          <span class="form-hint" style="display:block;margin-top:8px">After registering, add <code>CNAME www.yourdomain.com &rarr; <span id="this-server-host">this-server.hf.space</span></code> in your DNS settings.</span>
+        </div>
+      </div>
+
+      <!-- Registered domains -->
+      <div class="card mt-2">
+        <div class="card-header">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Protected Sites
+          </h2>
+          <span class="badge badge-default" id="domains-count-badge">0 sites</span>
+        </div>
+        <div id="domains-list" style="padding:10px">
+          <div class="empty-state" id="domains-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <h4>No sites registered yet</h4>
+            <p>Register a domain above to start protecting it</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live traffic log -->
+      <div class="card mt-2">
+        <div class="card-header">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Live WAF Traffic
+          </h2>
+          <div style="display:flex;align-items:center;gap:10px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted)">
+              <input type="checkbox" class="checkbox-native" id="chk-waf-blocked-only"> Blocked only
+            </label>
+            <select id="waf-domain-filter" class="input" style="height:28px;padding:0 8px;font-size:0.75rem;width:auto">
+              <option value="">All domains</option>
+            </select>
+          </div>
+        </div>
+        <div class="log-table-wrap">
+          <table class="log-table" id="waf-log-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Domain</th>
+                <th>Method</th>
+                <th>Path</th>
+                <th>IP</th>
+                <th>Status</th>
+                <th>Threat</th>
+              </tr>
+            </thead>
+            <tbody id="waf-log-tbody">
+              <tr><td colspan="7" style="text-align:center;color:var(--dim);padding:24px">No traffic logged yet. Register a domain and point DNS to this server.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── DOMAINS TAB ──────────────────────────────────────────────────────── -->
+<!-- This is a sibling of .main, appended inside .app -->
+<template id="tmpl-domains-tab">
+</template>
+
+<!-- Protect Site Modal -->
+<div id="protect-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="protect-modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="protect-modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;margin-right:8px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Enable WAF Protection
+      </h2>
+      <button class="modal-close" id="btn-modal-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-step" id="modal-step-1">
+        <div class="form-group">
+          <label class="form-label" for="protect-domain">Domain to protect</label>
+          <input type="text" id="protect-domain" class="input" placeholder="www.example.com" autocomplete="off" spellcheck="false">
+          <span class="form-hint">The www subdomain of your site (no https://)</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="protect-origin">Origin server URL</label>
+          <input type="url" id="protect-origin" class="input" placeholder="https://your-real-server.com" autocomplete="off" spellcheck="false">
+          <span class="form-hint">Where ShieldWall forwards clean traffic. Your real server IP or URL.</span>
+        </div>
+        <button class="btn btn-primary btn-full" id="btn-register-domain">Register &amp; Get DNS Instructions</button>
+      </div>
+      <div class="modal-step hidden" id="modal-step-2">
+        <div class="dns-success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:40px;height:40px"><polyline points="20 6 9 17 4 12"/></svg>
+          <h3>Domain Registered!</h3>
+          <p>Now point your DNS to ShieldWall by adding a CNAME record:</p>
+        </div>
+        <div class="dns-record-card">
+          <div class="dns-row">
+            <span class="dns-col-label">Type</span><span class="dns-col-value">CNAME</span>
+          </div>
+          <div class="dns-row">
+            <span class="dns-col-label">Name</span><span class="dns-col-value" id="dns-record-name">www.example.com</span>
+          </div>
+          <div class="dns-row">
+            <span class="dns-col-label">Value</span><span class="dns-col-value" id="dns-record-value">your-space.hf.space</span>
+          </div>
+          <div class="dns-row">
+            <span class="dns-col-label">TTL</span><span class="dns-col-value">Auto</span>
+          </div>
+        </div>
+        <div class="dns-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          DNS changes take 1–48 hours to propagate. Once done, all traffic to your domain flows through ShieldWall's WAF.
+        </div>
+        <button class="btn btn-default btn-full" id="btn-go-to-domains">View Protected Sites</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toasts" aria-live="polite" aria-label="Notifications"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "shieldwall",
+  "version": "1.0.0",
+  "description": "ShieldWall — Complete Web Security Platform: Live WAF Proxy, Vulnerability Scanner, and Code Hardener.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.17",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  },
+  "author": "ShieldWall Security",
+  "license": "MIT"
+}
