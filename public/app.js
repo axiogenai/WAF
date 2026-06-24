@@ -754,6 +754,12 @@ function initHardener() {
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
       toast('success', 'Pushed to GitHub', data.message);
+
+      // Auto-trigger a re-scan to show the clean/updated state
+      setTimeout(() => {
+        toast('info', 'Re-scanning repository to verify patches...');
+        document.getElementById('btn-harden-github')?.click();
+      }, 1000);
     } catch (e) {
       toast('error', 'Push failed', e.message);
     } finally {
