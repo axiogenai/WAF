@@ -988,31 +988,6 @@ function initDomains() {
     } catch {}
   }
 
-  document.getElementById('btn-add-domain')?.addEventListener('click', async () => {
-    const domain = document.getElementById('reg-domain').value.trim();
-    const origin = document.getElementById('reg-origin').value.trim();
-    if (!domain || !origin) { toast('warning', 'Fill in both domain and origin'); return; }
-    const btn = document.getElementById('btn-add-domain');
-    btn.disabled = true;
-    try {
-      const r = await fetch('/api/waf/domains', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain, origin })
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
-      toast('success', `${domain} protected`, 'Now add the DNS CNAME record');
-      document.getElementById('reg-domain').value = '';
-      document.getElementById('reg-origin').value = '';
-      loadDomains();
-    } catch (e) {
-      toast('error', 'Registration failed', e.message);
-    } finally {
-      btn.disabled = false;
-    }
-  });
-
   document.getElementById('chk-waf-blocked-only')?.addEventListener('change', fetchWafLogs);
   document.getElementById('waf-domain-filter')?.addEventListener('change', fetchWafLogs);
 

@@ -558,72 +558,10 @@
     <div class="tab" id="tab-domains">
       <div class="page-header">
         <h1>Protected Sites</h1>
-        <p>Register domains to route all their traffic through ShieldWall's WAF in the cloud</p>
+        <p>Sites are added automatically when you scan a URL and click <strong>Enable WAF Protection</strong>. DNS CNAME instructions are shown instantly.</p>
       </div>
 
-      <!-- How it works -->
-      <div class="card">
-        <div class="card-header">
-          <h2>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            How It Works
-          </h2>
-        </div>
-        <div class="card-body">
-          <div class="flow-steps">
-            <div class="flow-step">
-              <div class="flow-step-num">1</div>
-              <div class="flow-step-body">
-                <div class="flow-step-title">Register your domain</div>
-                <div class="flow-step-sub">Enter your www domain and your real server origin URL</div>
-              </div>
-            </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-              <div class="flow-step-num">2</div>
-              <div class="flow-step-body">
-                <div class="flow-step-title">Add a DNS CNAME</div>
-                <div class="flow-step-sub">Point <code>www.yourdomain.com</code> to this ShieldWall server</div>
-              </div>
-            </div>
-            <div class="flow-arrow">→</div>
-            <div class="flow-step">
-              <div class="flow-step-num">3</div>
-              <div class="flow-step-body">
-                <div class="flow-step-title">Traffic is protected</div>
-                <div class="flow-step-sub">All requests are inspected, attacks blocked, clean traffic forwarded</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Register new domain -->
-      <div class="card mt-2">
-        <div class="card-header">
-          <h2>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Register New Domain
-          </h2>
-        </div>
-        <div class="card-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
-            <div class="form-group" style="margin:0">
-              <label class="form-label" for="reg-domain">Domain to protect</label>
-              <input type="text" id="reg-domain" class="input" placeholder="www.example.com" autocomplete="off" spellcheck="false">
-            </div>
-            <div class="form-group" style="margin:0">
-              <label class="form-label" for="reg-origin">Origin server URL</label>
-              <input type="url" id="reg-origin" class="input" placeholder="https://real-server.com" autocomplete="off" spellcheck="false">
-            </div>
-            <button class="btn btn-primary" id="btn-add-domain" style="height:36px">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              Protect
-            </button>
-          </div>
-          <span class="form-hint" style="display:block;margin-top:8px">After registering, add <code>CNAME www.yourdomain.com &rarr; <span id="this-server-host">this-server.hf.space</span></code> in your DNS settings.</span>
-        </div>
-      </div>
 
       <!-- Registered domains -->
       <div class="card mt-2">
