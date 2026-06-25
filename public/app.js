@@ -849,6 +849,10 @@ function initDomains() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               Test WAF
             </button>
+            <button class="btn btn-sm domain-code-btn" data-domain="${esc(d.domain)}" style="background:var(--purple-bg);color:var(--purple);border:1px solid rgba(188,140,255,.3)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Get Code
+            </button>
             <button class="btn btn-danger btn-sm domain-remove-btn" data-domain="${esc(d.domain)}">Remove</button>
           </div>
         </div>
@@ -865,6 +869,8 @@ function initDomains() {
             <div class="spinner" style="margin:0 auto 10px"></div>
             Running 7 attack simulations…
           </div>
+        </div>
+        <div class="shield-code-panel hidden" id="shield-code-${esc(d.domain).replace(/\./g, '-')}">
         </div>
       </div>`).join('');
 
@@ -887,6 +893,10 @@ function initDomains() {
 
     listEl.querySelectorAll('.domain-test-btn').forEach(btn => {
       btn.addEventListener('click', () => testWafDomain(btn.dataset.domain, btn));
+    });
+
+    listEl.querySelectorAll('.domain-code-btn').forEach(btn => {
+      btn.addEventListener('click', () => getShieldCode(btn.dataset.domain));
     });
   }
 
@@ -942,6 +952,79 @@ function initDomains() {
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Test WAF`;
+    }
+  }
+
+  async function getShieldCode(domain) {
+    const panelId = 'shield-code-' + domain.replace(/\./g, '-');
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+
+    // Toggle
+    if (!panel.classList.contains('hidden') && panel.innerHTML.trim()) {
+      panel.classList.add('hidden');
+      return;
+    }
+
+    panel.classList.remove('hidden');
+    panel.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted)"><div class="spinner" style="margin:0 auto 10px"></div>Generating protection code…</div>`;
+
+    try {
+      const r = await fetch(`/api/shield/middleware/${encodeURIComponent(domain)}`);
+      const code = await r.json();
+
+      const tabs = [
+        { id: 'script_tag', label: '⚡ HTML Script Tag', desc: 'Easiest — just paste one line into your HTML' },
+        { id: 'nodejs',     label: '🟢 Node.js',        desc: 'Express/Koa middleware' },
+        { id: 'python',     label: '🐍 Python',         desc: 'Flask / Django decorator' },
+        { id: 'php',        label: '🐘 PHP',             desc: 'Add to entry point' },
+      ];
+
+      panel.innerHTML = `
+        <div class="shield-code-container">
+          <div class="shield-code-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <div>
+              <div style="font-weight:700;font-size:0.95rem">Protection Code for ${esc(domain)}</div>
+              <div style="font-size:0.75rem;color:var(--muted)">Copy-paste into your website — no DNS changes needed</div>
+            </div>
+          </div>
+          <div class="shield-code-tabs">
+            ${tabs.map((t, i) => `<button class="shield-tab ${i === 0 ? 'active' : ''}" data-shield-lang="${t.id}">${t.label}</button>`).join('')}
+          </div>
+          <div class="shield-code-desc" id="shield-desc-${domain.replace(/\./g, '-')}">${tabs[0].desc}</div>
+          <div class="shield-code-block">
+            <button class="copy-config-btn shield-copy-btn" data-domain="${esc(domain)}">📋 Copy</button>
+            <pre class="config-code" id="shield-pre-${domain.replace(/\./g, '-')}"><code>${esc(code[tabs[0].id])}</code></pre>
+          </div>
+        </div>`;
+
+      // Store code for tab switching
+      panel._shieldCode = code;
+      panel._shieldTabs = tabs;
+
+      // Tab switching
+      panel.querySelectorAll('.shield-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          panel.querySelectorAll('.shield-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const lang = tab.dataset.shieldLang;
+          const pre = document.getElementById('shield-pre-' + domain.replace(/\./g, '-'));
+          const desc = document.getElementById('shield-desc-' + domain.replace(/\./g, '-'));
+          if (pre) pre.innerHTML = '<code>' + esc(code[lang]) + '</code>';
+          if (desc) desc.textContent = tabs.find(t => t.id === lang)?.desc || '';
+        });
+      });
+
+      // Copy button
+      panel.querySelector('.shield-copy-btn')?.addEventListener('click', () => {
+        const activeLang = panel.querySelector('.shield-tab.active')?.dataset.shieldLang || 'script_tag';
+        navigator.clipboard.writeText(code[activeLang]).then(() => toast('success', 'Copied to clipboard!'));
+      });
+
+      toast('info', `Protection code generated for ${domain}`);
+    } catch(e) {
+      panel.innerHTML = `<div style="padding:16px;color:var(--red)">Failed to generate code: ${esc(e.message)}</div>`;
     }
   }
 

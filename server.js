@@ -1235,6 +1235,328 @@ app.post('/api/waf/domains/:domain/rules', (req, res) => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
+// SHIELD — One-Line Middleware Protection API
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ── Shield: check a request ──────────────────────────────────────────────────
+// Any server can POST request metadata here and get a block/allow decision.
+app.post('/api/shield/check', (req, res) => {
+  // Allow cross-origin calls from any protected site
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, X-Shield-Key');
+
+  if (!wafEngine) return res.status(500).json({ error: 'WAF engine not loaded.' });
+
+  const { domain, url, method, headers, body, ip } = req.body;
+  if (!domain || !url) return res.status(400).json({ error: 'domain and url are required.' });
+
+  // Verify domain is registered
+  if (domainRegistry) {
+    const entry = domainRegistry.lookup(domain);
+    if (!entry) return res.status(403).json({ error: `Domain "${domain}" is not registered. Register it first at the ShieldWall dashboard.` });
+  }
+
+  // Build a mock request object for the WAF engine
+  const mockReq = {
+    url:     url || '/',
+    method:  method || 'GET',
+    headers: headers || {}
+  };
+
+  const entry = domainRegistry ? domainRegistry.lookup(domain) : null;
+  const rules = entry?.rules || { sqli: true, xss: true, pathTraversal: true, rfiLfi: true, commandInjection: true, protocolViolation: true, botDetection: true };
+
+  let blocked  = false;
+  let category = null;
+  let ruleId   = null;
+  let detail   = null;
+
+  // Bot detection
+  const ua = (headers && headers['user-agent']) || '';
+  if (rules.botDetection && wafEngine.checkBotSignature) {
+    const bot = wafEngine.checkBotSignature(ua);
+    if (bot.isBot) {
+      blocked  = true;
+      category = 'Bot/Scanner';
+      ruleId   = bot.botName;
+      detail   = `Detected scanner: ${bot.botName}`;
+    }
+  }
+
+  // WAF rule inspection
+  if (!blocked && wafEngine.inspectRequest) {
+    const result = wafEngine.inspectRequest(mockReq, body || '', rules);
+    if (result.blocked) {
+      blocked  = true;
+      category = result.category;
+      ruleId   = result.ruleId;
+      detail   = result.payload;
+    }
+  }
+
+  // Rate limiting by IP
+  if (!blocked && rateLimiter?.check && ip) {
+    const rl = rateLimiter.check(ip);
+    if (rl?.blocked) {
+      blocked  = true;
+      category = 'Rate Limited';
+      detail   = 'Too many requests from this IP';
+    }
+  }
+
+  // Log the check
+  if (entry && domainRegistry) {
+    domainRegistry.incrementStat(domain, blocked ? 'blocked' : 'allowed');
+  }
+  const logEntry = {
+    id: Date.now() + Math.random().toString(36).slice(2),
+    host: domain, ip: ip || req.ip, method: method || 'GET',
+    path: url, timestamp: Date.now(), blocked, category
+  };
+  wafProxyLogs.unshift(logEntry);
+  if (wafProxyLogs.length > 2000) wafProxyLogs.pop();
+
+  res.json({
+    action:   blocked ? 'BLOCK' : 'ALLOW',
+    blocked,
+    category: category || null,
+    ruleId:   ruleId || null,
+    detail:   detail || null,
+    ref:      'SW-' + Date.now()
+  });
+});
+
+// CORS preflight for shield check
+app.options('/api/shield/check', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, X-Shield-Key');
+  res.status(204).end();
+});
+
+// ── Shield: get middleware code for a domain ─────────────────────────────────
+app.get('/api/shield/middleware/:domain', (req, res) => {
+  const domain = decodeURIComponent(req.params.domain);
+  const shieldUrl = `https://adityax26-waf.hf.space/api/shield/check`;
+
+  const code = {
+    nodejs: `// ShieldWall WAF Protection — Add this BEFORE your routes
+const http = require('https');
+
+function shieldWall(req, res, next) {
+  const data = JSON.stringify({
+    domain: '${domain}',
+    url: req.url,
+    method: req.method,
+    headers: { 'user-agent': req.headers['user-agent'] || '' },
+    body: '',
+    ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+  });
+  const r = http.request('${shieldUrl}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': data.length }
+  }, (resp) => {
+    let body = '';
+    resp.on('data', c => body += c);
+    resp.on('end', () => {
+      try {
+        const result = JSON.parse(body);
+        if (result.blocked) {
+          res.status(403).json({ error: 'Blocked by ShieldWall WAF', category: result.category, ruleId: result.ruleId });
+        } else {
+          next();
+        }
+      } catch { next(); }
+    });
+  });
+  r.on('error', () => next()); // fail-open: if ShieldWall is unreachable, allow the request
+  r.write(data);
+  r.end();
+}
+
+// Usage: app.use(shieldWall);`,
+
+    python: `# ShieldWall WAF Protection — Add this to your Flask/Django app
+import requests, functools
+from flask import request, jsonify, abort
+
+SHIELD_URL = '${shieldUrl}'
+SHIELD_DOMAIN = '${domain}'
+
+def shieldwall_protect(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            r = requests.post(SHIELD_URL, json={
+                'domain': SHIELD_DOMAIN,
+                'url': request.path + ('?' + request.query_string.decode() if request.query_string else ''),
+                'method': request.method,
+                'headers': {'user-agent': request.headers.get('User-Agent', '')},
+                'body': request.get_data(as_text=True),
+                'ip': request.remote_addr
+            }, timeout=2)
+            result = r.json()
+            if result.get('blocked'):
+                return jsonify(error='Blocked by ShieldWall WAF', category=result.get('category')), 403
+        except:
+            pass  # fail-open
+        return f(*args, **kwargs)
+    return wrapper
+
+# Usage: @app.before_request followed by shieldwall_protect
+# Or decorate individual routes: @shieldwall_protect`,
+
+    php: `<?php
+// ShieldWall WAF Protection — Add this at the top of your PHP entry point
+function shieldwall_check() {
+    $data = json_encode([
+        'domain' => '${domain}',
+        'url'    => $_SERVER['REQUEST_URI'],
+        'method' => $_SERVER['REQUEST_METHOD'],
+        'headers'=> ['user-agent' => $_SERVER['HTTP_USER_AGENT'] ?? ''],
+        'body'   => file_get_contents('php://input'),
+        'ip'     => $_SERVER['REMOTE_ADDR']
+    ]);
+    $ch = curl_init('${shieldUrl}');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $data,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 2
+    ]);
+    $resp = curl_exec($ch);
+    curl_close($ch);
+    if ($resp) {
+        $result = json_decode($resp, true);
+        if (!empty($result['blocked'])) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Blocked by ShieldWall WAF', 'category' => $result['category']]);
+            exit;
+        }
+    }
+}
+shieldwall_check();
+?>`,
+
+    script_tag: `<!-- ShieldWall WAF Protection — Add this to your HTML <head> -->
+<script src="https://adityax26-waf.hf.space/shield.js?domain=${encodeURIComponent(domain)}"></script>`
+  };
+
+  res.json(code);
+});
+
+// ── Shield: embeddable client-side protection script ─────────────────────────
+app.get('/shield.js', (req, res) => {
+  const domain = req.query.domain || '';
+  res.set('Content-Type', 'application/javascript');
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.set('Access-Control-Allow-Origin', '*');
+
+  res.send(`(function(){
+  'use strict';
+  var SHIELD_URL = '${req.protocol}://${req.get('host')}/api/shield/check';
+  var DOMAIN = '${domain.replace(/'/g, "\\'")}';
+  if (!DOMAIN) return;
+
+  // ── Block inline XSS attempts ──
+  var meta = document.createElement('meta');
+  meta.httpEquiv = 'Content-Security-Policy';
+  meta.content = "script-src 'self' 'unsafe-inline' https://adityax26-waf.hf.space; object-src 'none';";
+  document.head.appendChild(meta);
+
+  // ── Check current page load ──
+  var data = JSON.stringify({
+    domain: DOMAIN,
+    url: location.pathname + location.search,
+    method: 'GET',
+    headers: { 'user-agent': navigator.userAgent },
+    body: '',
+    ip: ''
+  });
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', SHIELD_URL, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function() {
+    try {
+      var r = JSON.parse(xhr.responseText);
+      if (r.blocked) {
+        document.title = 'Blocked by ShieldWall WAF';
+        document.body.innerHTML = '<div style="font-family:Inter,sans-serif;text-align:center;padding:60px;background:#0d1117;color:#e6edf3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">'
+          + '<div style="font-size:64px;margin-bottom:16px">\\u{1F6E1}\\uFE0F</div>'
+          + '<h1 style="margin:0 0 8px;font-size:1.5rem">Blocked by ShieldWall WAF</h1>'
+          + '<p style="color:#8b949e;margin:0">Category: ' + (r.category||'unknown') + '</p>'
+          + '<p style="color:#656d76;margin-top:8px;font-size:0.8rem">Ref: ' + (r.ref||'') + '</p></div>';
+      }
+    } catch(e) {}
+  };
+  xhr.send(data);
+
+  // ── Intercept form submissions ──
+  document.addEventListener('submit', function(e) {
+    var form = e.target;
+    var formData = new FormData(form);
+    var body = '';
+    formData.forEach(function(v, k) { body += k + '=' + encodeURIComponent(v) + '&'; });
+
+    var check = new XMLHttpRequest();
+    check.open('POST', SHIELD_URL, false); // synchronous to block submission
+    check.setRequestHeader('Content-Type', 'application/json');
+    try {
+      check.send(JSON.stringify({
+        domain: DOMAIN,
+        url: form.action || location.pathname,
+        method: form.method || 'POST',
+        headers: { 'user-agent': navigator.userAgent },
+        body: body,
+        ip: ''
+      }));
+      var r = JSON.parse(check.responseText);
+      if (r.blocked) {
+        e.preventDefault();
+        alert('ShieldWall WAF blocked this submission:\\n' + (r.category||'Threat detected'));
+      }
+    } catch(ex) {}
+  }, true);
+
+  // ── Monitor URL for injection attempts ──
+  if (location.search) {
+    var checkUrl = new XMLHttpRequest();
+    checkUrl.open('POST', SHIELD_URL, true);
+    checkUrl.setRequestHeader('Content-Type', 'application/json');
+    checkUrl.onload = function() {
+      try {
+        var r = JSON.parse(checkUrl.responseText);
+        if (r.blocked) {
+          document.title = 'Blocked by ShieldWall WAF';
+          document.body.innerHTML = '<div style="font-family:Inter,sans-serif;text-align:center;padding:60px;background:#0d1117;color:#e6edf3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">'
+            + '<div style="font-size:64px;margin-bottom:16px">\\u{1F6E1}\\uFE0F</div>'
+            + '<h1 style="margin:0 0 8px;font-size:1.5rem">Blocked by ShieldWall WAF</h1>'
+            + '<p style="color:#8b949e;margin:0">Malicious URL parameter detected</p>'
+            + '<p style="color:#8b949e;margin:4px 0">Category: ' + (r.category||'unknown') + '</p>'
+            + '<p style="color:#656d76;margin-top:8px;font-size:0.8rem">Ref: ' + (r.ref||'') + '</p></div>';
+        }
+      } catch(e) {}
+    };
+    checkUrl.send(JSON.stringify({
+      domain: DOMAIN,
+      url: location.pathname + location.search,
+      method: 'GET',
+      headers: { 'user-agent': navigator.userAgent },
+      body: '',
+      ip: ''
+    }));
+  }
+
+  console.log('%c\\u{1F6E1}\\uFE0F ShieldWall WAF Protection Active', 'color:#3fb950;font-weight:bold;font-size:14px');
+})();
+`);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Start Server
 // ═════════════════════════════════════════════════════════════════════════════
 

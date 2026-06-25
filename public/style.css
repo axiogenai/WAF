@@ -1400,6 +1400,61 @@ input, textarea, select { font-family: var(--font); }
   .waf-test-expect, .waf-test-actual { display: none; }
 }
 
+/* ── Shield Code Panel ───────────────────────────────── */
+.shield-code-panel { border-top: 1px solid var(--border); background: var(--bg4); }
+.shield-code-container { padding: 16px; }
+.shield-code-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border2);
+}
+.shield-code-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.shield-tab {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all var(--t);
+}
+.shield-tab:hover { color: var(--text); border-color: var(--border3); }
+.shield-tab.active {
+  background: var(--purple-bg);
+  color: var(--purple);
+  border-color: rgba(188,140,255,.4);
+}
+.shield-code-desc {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+  font-style: italic;
+}
+.shield-code-block {
+  position: relative;
+  background: #010409;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  max-height: 360px;
+  overflow-y: auto;
+}
+.shield-code-block .config-code {
+  padding: 14px 16px;
+  font-size: 0.72rem;
+  line-height: 1.7;
+}
+
+
 /* ══════════════════════════════════════════════════════
    CONFIG PANEL
    ══════════════════════════════════════════════════════ */
