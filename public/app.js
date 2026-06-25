@@ -768,11 +768,6 @@ function initHardener() {
   });
 }
 
-// ═══════════════════════════════════════════════════════
-// PROTECT TAB — WAF PROXY
-// ═══════════════════════════════════════════════════════
-
-
 
 // ═══════════════════════════════════════════════════════
 // PROTECT SITES / DOMAINS TAB
@@ -850,6 +845,10 @@ function initDomains() {
           </div>
           <div class="domain-actions">
             <button class="btn btn-ghost btn-sm domain-dns-btn" data-domain="${esc(d.domain)}">DNS Setup</button>
+            <button class="btn btn-primary btn-sm domain-test-btn" data-domain="${esc(d.domain)}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Test WAF
+            </button>
             <button class="btn btn-danger btn-sm domain-remove-btn" data-domain="${esc(d.domain)}">Remove</button>
           </div>
         </div>
@@ -859,6 +858,12 @@ function initDomains() {
             <div class="dns-row"><span class="dns-col-label">Name</span><span class="dns-col-value">${esc(d.domain)}</span></div>
             <div class="dns-row"><span class="dns-col-label">Value</span><span class="dns-col-value">${esc(serverHost)}</span></div>
             <div class="dns-row"><span class="dns-col-label">TTL</span><span class="dns-col-value">Auto</span></div>
+          </div>
+        </div>
+        <div class="waf-test-panel hidden" id="waf-test-${esc(d.domain).replace(/\./g, '-')}">
+          <div class="waf-test-loading" style="padding:20px;text-align:center;color:var(--muted)">
+            <div class="spinner" style="margin:0 auto 10px"></div>
+            Running 7 attack simulations…
           </div>
         </div>
       </div>`).join('');
@@ -879,6 +884,65 @@ function initDomains() {
         if (panel) panel.classList.toggle('hidden');
       });
     });
+
+    listEl.querySelectorAll('.domain-test-btn').forEach(btn => {
+      btn.addEventListener('click', () => testWafDomain(btn.dataset.domain, btn));
+    });
+  }
+
+  async function testWafDomain(domain, btn) {
+    const panelId = 'waf-test-' + domain.replace(/\./g, '-');
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+
+    panel.classList.remove('hidden');
+    panel.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted)">
+      <div class="spinner" style="margin:0 auto 10px"></div>
+      Running 7 attack simulations…
+    </div>`;
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Testing…'; }
+
+    try {
+      const r = await fetch(`/api/waf/test/${encodeURIComponent(domain)}`, { method: 'POST' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Test failed');
+
+      const gradeColor = data.grade === 'A+' ? 'var(--green)' : data.grade === 'A' ? '#58a6ff' : data.grade === 'B' ? 'var(--yellow)' : 'var(--red)';
+
+      panel.innerHTML = `
+        <div class="waf-test-results">
+          <div class="waf-test-summary">
+            <div class="waf-test-grade" style="background:${gradeColor}">${esc(data.grade)}</div>
+            <div>
+              <div style="font-weight:600;font-size:0.9rem">${data.passed}/${data.total} tests passed</div>
+              <div style="font-size:0.75rem;color:var(--muted)">Security grade for ${esc(domain)}</div>
+            </div>
+          </div>
+          <div class="waf-test-items">
+            ${data.results.map(t => `
+              <div class="waf-test-item ${t.pass ? 'pass' : 'fail'}">
+                <span class="waf-test-icon">${t.pass ? '✅' : '❌'}</span>
+                <span class="waf-test-name">${esc(t.name)}</span>
+                <span class="waf-test-expect">${t.expectBlock ? 'Should block' : 'Should allow'}</span>
+                <span class="waf-test-actual">${t.blocked ? '🛡️ Blocked' : '✓ Allowed'}${t.ruleId ? ' — ' + esc(t.ruleId) : ''}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+
+      toast(data.grade === 'A+' ? 'success' : data.grade === 'F' ? 'error' : 'warning',
+        `WAF Test: ${data.grade} — ${data.passed}/${data.total} passed`);
+
+    } catch(e) {
+      panel.innerHTML = `<div style="padding:16px;color:var(--red)">Test failed: ${esc(e.message)}</div>`;
+      toast('error', 'WAF test failed');
+    }
+
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Test WAF`;
+    }
   }
 
   async function fetchWafLogs() {

@@ -1353,6 +1353,53 @@ input, textarea, select { font-family: var(--font); }
 .domain-actions { display: flex; gap: 6px; }
 .domain-dns-panel { border-top: 1px solid var(--border); padding: 14px; background: var(--bg4); }
 
+/* ── WAF Test Results ────────────────────────────────── */
+.waf-test-panel { border-top: 1px solid var(--border); background: var(--bg4); }
+.waf-test-results { padding: 16px; }
+.waf-test-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border2);
+}
+.waf-test-grade {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.waf-test-items { display: flex; flex-direction: column; gap: 4px; }
+.waf-test-item {
+  display: grid;
+  grid-template-columns: 28px 1fr 100px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  transition: background var(--t);
+}
+.waf-test-item.pass { background: var(--green-bg); border: 1px solid var(--green-border); }
+.waf-test-item.fail { background: var(--red-bg); border: 1px solid var(--red-border); }
+.waf-test-icon { font-size: 1rem; text-align: center; }
+.waf-test-name { font-weight: 600; color: var(--text); }
+.waf-test-expect { font-size: 0.72rem; color: var(--muted); text-align: center; }
+.waf-test-actual { font-size: 0.75rem; color: var(--text2); text-align: right; font-family: var(--mono); }
+
+@media (max-width: 700px) {
+  .waf-test-item { grid-template-columns: 28px 1fr; }
+  .waf-test-expect, .waf-test-actual { display: none; }
+}
+
 /* ══════════════════════════════════════════════════════
    CONFIG PANEL
    ══════════════════════════════════════════════════════ */
