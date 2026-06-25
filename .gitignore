@@ -42,6 +42,3 @@ desktop.ini
 
 # Nested git folder junk
 WAF/
-
-# Exclude core modules as requested
-modules/
