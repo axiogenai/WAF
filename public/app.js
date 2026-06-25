@@ -311,20 +311,28 @@ function initConfigPanel() {
 
 
 // ═══════════════════════════════════════════════════════
+// SHARED HELPERS
+// ═══════════════════════════════════════════════════════
+const scanBtnSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`;
+const shieldSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+function restoreBtn(btn, svg, label) { btn.disabled = false; btn.innerHTML = svg + ' ' + label; }
+function hideProgress(wrapId) { setTimeout(() => document.getElementById(wrapId)?.classList.add('hidden'), 1500); }
+function setProgress(fillId, pctId, statusId, wrapId, pct, status) {
+  document.getElementById(wrapId).classList.remove('hidden');
+  document.getElementById(fillId).style.width = pct + '%';
+  document.getElementById(pctId).textContent  = pct + '%';
+  document.getElementById(statusId).textContent = status;
+}
+
+// ═══════════════════════════════════════════════════════
 // SCANNER TAB
 // ═══════════════════════════════════════════════════════
 
 function initScanner() {
   let pollInterval = null;
 
-  function setProgress(fillId, pctId, statusId, wrapId, pct, status) {
-    document.getElementById(wrapId).classList.remove('hidden');
-    document.getElementById(fillId).style.width = pct + '%';
-    document.getElementById(pctId).textContent  = pct + '%';
-    document.getElementById(statusId).textContent = status;
-  }
-
   // ── URL scan ──────────────────────────────────────────
+
   document.getElementById('btn-scan-url').addEventListener('click', async () => {
     const url = document.getElementById('url-scan-input').value.trim();
     if (!url) { toast('warning', 'Enter a URL first'); return; }
@@ -332,7 +340,7 @@ function initScanner() {
 
     const btn = document.getElementById('btn-scan-url');
     btn.disabled = true;
-    btn.textContent = 'Scanning...';
+    btn.innerHTML = '<div class="spinner-inline"></div> Scanning...';
     setProgress('url-progress-fill', 'url-progress-pct', 'url-progress-status', 'url-progress', 5, 'Starting scan...');
 
     try {
@@ -357,19 +365,22 @@ function initScanner() {
           if (status.status === 'complete') {
             clearInterval(pollInterval);
             setProgress('url-progress-fill', 'url-progress-pct', 'url-progress-status', 'url-progress', 100, 'Done');
+            hideProgress('url-progress');
             showScanResults(status.result, url);
             toast('success', 'Scan complete', `${(status.result?.findings || []).length} issues found`);
-            btn.disabled = false; btn.textContent = 'Scan';
+            restoreBtn(btn, scanBtnSvg, 'Scan');
           } else if (status.status === 'error') {
             clearInterval(pollInterval);
+            hideProgress('url-progress');
             toast('error', 'Scan failed', status.error);
-            btn.disabled = false; btn.textContent = 'Scan';
+            restoreBtn(btn, scanBtnSvg, 'Scan');
           }
         } catch {}
       }, 1000);
     } catch (e) {
       toast('error', 'Scan error', e.message);
-      btn.disabled = false; btn.textContent = 'Scan';
+      hideProgress('url-progress');
+      restoreBtn(btn, scanBtnSvg, 'Scan');
     }
   });
 
@@ -379,7 +390,8 @@ function initScanner() {
     if (!url) { toast('warning', 'Enter a GitHub URL'); return; }
 
     const btn = document.getElementById('btn-scan-github');
-    btn.disabled = true; btn.textContent = 'Cloning...';
+    const ghBtnSvg = btn.innerHTML.match(/<svg[^>]*>.*?<\/svg>/s)?.[0] || scanBtnSvg;
+    btn.disabled = true; btn.innerHTML = '<div class="spinner-inline"></div> Cloning...';
     setProgress('github-progress-fill', 'github-progress-pct', 'github-progress-status', 'github-progress', 5, 'Cloning repository...');
 
     try {
@@ -392,12 +404,14 @@ function initScanner() {
       if (!r.ok) throw new Error(data.error || 'Clone failed');
 
       setProgress('github-progress-fill', 'github-progress-pct', 'github-progress-status', 'github-progress', 100, 'Done');
+      hideProgress('github-progress');
       showScanResults(data.codeAnalysis || data, `${data.repoName} (${data.filesScanned} files)`);
       toast('success', 'Repo scan complete', `${data.filesScanned} files analyzed`);
     } catch (e) {
+      hideProgress('github-progress');
       toast('error', 'GitHub scan failed', e.message);
     } finally {
-      btn.disabled = false; btn.textContent = 'Clone & Scan';
+      restoreBtn(btn, ghBtnSvg, 'Clone \u0026 Scan');
     }
   });
 
@@ -411,7 +425,7 @@ function initScanner() {
     if (!files.length) { toast('warning', 'Upload some files first'); return; }
 
     const btn = document.getElementById('btn-analyze-code');
-    btn.disabled = true; btn.textContent = 'Analyzing...';
+    btn.disabled = true; btn.innerHTML = '<div class="spinner-inline"></div> Analyzing...';
 
     try {
       const fd = new FormData();
@@ -424,7 +438,7 @@ function initScanner() {
     } catch (e) {
       toast('error', 'Analysis failed', e.message);
     } finally {
-      btn.disabled = false; btn.textContent = 'Analyze Code';
+      restoreBtn(btn, scanBtnSvg, 'Analyze Code');
     }
   });
 
@@ -536,7 +550,6 @@ function initHardener() {
         </div>`;
     }).join('');
 
-    // Expand/collapse
     container.querySelectorAll('.patch-expand-btn').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
@@ -547,7 +560,6 @@ function initHardener() {
       });
     });
 
-    // Checkbox toggle
     container.querySelectorAll('.patch-check').forEach(chk => {
       chk.addEventListener('click', e => {
         e.stopPropagation();
@@ -592,7 +604,7 @@ function initHardener() {
     if (!files.length) { toast('warning', 'Upload project files first'); return; }
 
     const btn = document.getElementById('btn-harden');
-    btn.disabled = true; btn.textContent = 'Analyzing...';
+    btn.disabled = true; btn.innerHTML = '<div class="spinner-inline"></div> Analyzing...';
     try {
       const fd = new FormData();
       files.forEach(f => fd.append('files', f));
@@ -609,7 +621,7 @@ function initHardener() {
     } catch (e) {
       toast('error', 'Hardening failed', e.message);
     } finally {
-      btn.disabled = false; btn.textContent = 'Detect & Harden';
+      restoreBtn(btn, shieldSvg, 'Detect \u0026 Harden');
     }
   });
 
@@ -620,7 +632,7 @@ function initHardener() {
 
     const btn = document.getElementById('btn-harden-github');
     const prog = document.getElementById('harden-github-progress');
-    btn.disabled = true; btn.textContent = 'Cloning...';
+    btn.disabled = true; btn.innerHTML = '<div class="spinner-inline"></div> Cloning...';
     prog.classList.remove('hidden');
 
     function setP(pct, status) {
@@ -641,13 +653,15 @@ function initHardener() {
       if (!r.ok) throw new Error(data.error);
 
       setP(100, 'Done');
+      hideProgress('harden-github-progress');
       lastGithubUrl = url;
       showHardenResults({ ...data.hardenResult, repoUrl: url });
       toast('success', 'Repo hardened', `${data.hardenResult?.patches?.length || 0} patches generated`);
     } catch (e) {
+      hideProgress('harden-github-progress');
       toast('error', 'GitHub hardening failed', e.message);
     } finally {
-      btn.disabled = false; btn.textContent = 'Harden Repo';
+      restoreBtn(btn, shieldSvg, 'Harden Repo');
     }
   });
 
@@ -658,7 +672,7 @@ function initHardener() {
     if (!url.startsWith('http')) { toast('warning', 'URL must start with http:// or https://'); return; }
 
     const btn = document.getElementById('btn-harden-url');
-    btn.disabled = true; btn.textContent = 'Probing...';
+    btn.disabled = true; btn.innerHTML = '<div class="spinner-inline"></div> Probing...';
 
     try {
       const r = await fetch('/api/harden/url', {
@@ -674,7 +688,7 @@ function initHardener() {
     } catch (e) {
       toast('error', 'URL hardening failed', e.message);
     } finally {
-      btn.disabled = false; btn.textContent = 'Generate Patches';
+      restoreBtn(btn, shieldSvg, 'Generate Patches');
     }
   });
 
@@ -719,7 +733,7 @@ function initHardener() {
     if (!localPath) { toast('warning', 'Enter a directory path'); return; }
     const indices = getSelectedIndices();
     const btn = document.getElementById('btn-write-local');
-    btn.disabled = true; btn.textContent = 'Writing...';
+    btn.disabled = true; btn.innerHTML = '<div class="spinner-inline"></div> Writing...';
     try {
       const r = await fetch('/api/harden/apply', {
         method: 'POST',
@@ -732,7 +746,7 @@ function initHardener() {
     } catch (e) {
       toast('error', 'Failed to apply', e.message);
     } finally {
-      btn.disabled = false; btn.textContent = 'Apply';
+      btn.disabled = false; btn.innerHTML = '✅ Apply';
     }
   });
 
@@ -744,7 +758,7 @@ function initHardener() {
     if (!lastGithubUrl) { toast('warning', 'Run GitHub hardening first to set the repo URL'); return; }
     const indices = getSelectedIndices();
     const btn = document.getElementById('btn-github-push');
-    btn.disabled = true; btn.textContent = 'Pushing...';
+    btn.disabled = true; btn.innerHTML = '<div class="spinner-inline"></div> Pushing...';
     try {
       const r = await fetch('/api/harden/github/push', {
         method: 'POST',
@@ -763,7 +777,7 @@ function initHardener() {
     } catch (e) {
       toast('error', 'Push failed', e.message);
     } finally {
-      btn.disabled = false; btn.textContent = 'Commit & Push Changes';
+      btn.disabled = false; btn.innerHTML = shieldSvg + ' Commit \u0026 Push Changes';
     }
   });
 }
@@ -812,7 +826,7 @@ function initDomains() {
 
     if (!domains.length) {
       listEl.innerHTML = `<div class="empty-state" id="domains-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1-4-10z"/></svg>
         <h4>No sites registered yet</h4>
         <p>Register a domain above to start protecting it</p>
       </div>`;
@@ -911,7 +925,7 @@ function initDomains() {
       Running 7 attack simulations…
     </div>`;
 
-    if (btn) { btn.disabled = true; btn.textContent = 'Testing…'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner-inline"></div> Testing…'; }
 
     try {
       const r = await fetch(`/api/waf/test/${encodeURIComponent(domain)}`, { method: 'POST' });
@@ -1059,6 +1073,16 @@ function initDomains() {
   document.getElementById('chk-waf-blocked-only')?.addEventListener('change', fetchWafLogs);
   document.getElementById('waf-domain-filter')?.addEventListener('change', fetchWafLogs);
 
+  // Clear WAF log interval when switching away from domains tab
+  document.querySelectorAll('.nav-btn[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.tab !== 'tab-domains') {
+        clearInterval(domainsLogInterval);
+        domainsLogInterval = null;
+      }
+    });
+  });
+
   document.querySelector('[data-tab="tab-domains"]')?.addEventListener('click', () => {
     loadDomains();
     fetchWafLogs();
@@ -1078,6 +1102,13 @@ function initDomains() {
     else if (banner)       banner.classList.add('hidden');
   };
 
+  function openProtectModal() {
+    // Always reset modal to step 1 when opening
+    document.getElementById('modal-step-1')?.classList.remove('hidden');
+    document.getElementById('modal-step-2')?.classList.add('hidden');
+    document.getElementById('protect-modal')?.classList.remove('hidden');
+  }
+
   btnProtect?.addEventListener('click', async () => {
     if (!lastScanUrl) return;
 
@@ -1089,7 +1120,7 @@ function initDomains() {
     } catch { toast('error', 'Invalid scanned URL'); return; }
 
     btnProtect.disabled = true;
-    btnProtect.textContent = 'Enabling...';
+    btnProtect.innerHTML = '<div class="spinner-inline"></div> Enabling...';
 
     try {
       const r = await fetch('/api/waf/domains', {
@@ -1111,15 +1142,22 @@ function initDomains() {
       toast('error', 'Registration failed', e.message);
     } finally {
       btnProtect.disabled = false;
-      btnProtect.textContent = 'Enable WAF Protection';
+      btnProtect.innerHTML = shieldSvg + ' Enable WAF Protection';
     }
   });
 
   document.getElementById('btn-modal-close')?.addEventListener('click', () => {
     document.getElementById('protect-modal')?.classList.add('hidden');
+    // Reset modal state on close
+    document.getElementById('modal-step-1')?.classList.remove('hidden');
+    document.getElementById('modal-step-2')?.classList.add('hidden');
   });
   document.getElementById('protect-modal')?.addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+    if (e.target === e.currentTarget) {
+      e.currentTarget.classList.add('hidden');
+      document.getElementById('modal-step-1')?.classList.remove('hidden');
+      document.getElementById('modal-step-2')?.classList.add('hidden');
+    }
   });
 
   document.getElementById('btn-register-domain')?.addEventListener('click', async () => {
@@ -1127,7 +1165,7 @@ function initDomains() {
     const origin = document.getElementById('protect-origin').value.trim();
     if (!domain || !origin) { toast('warning', 'Fill in both fields'); return; }
     const btn = document.getElementById('btn-register-domain');
-    btn.disabled = true; btn.textContent = 'Registering...';
+    btn.disabled = true; btn.innerHTML = '<div class="spinner-inline"></div> Registering...';
     try {
       const r = await fetch('/api/waf/domains', {
         method: 'POST',
@@ -1145,13 +1183,20 @@ function initDomains() {
     } catch (e) {
       toast('error', 'Registration failed', e.message);
     } finally {
-      btn.disabled = false; btn.textContent = 'Register & Get DNS Instructions';
+      btn.disabled = false; btn.innerHTML = shieldSvg + ' Register \u0026 Get DNS Instructions';
     }
   });
 
   document.getElementById('btn-go-to-domains')?.addEventListener('click', () => {
     document.getElementById('protect-modal')?.classList.add('hidden');
+    document.getElementById('modal-step-1')?.classList.remove('hidden');
+    document.getElementById('modal-step-2')?.classList.add('hidden');
     document.querySelector('[data-tab="tab-domains"]')?.click();
+  });
+
+  // Direct domain registration from Protect Sites tab
+  document.getElementById('btn-add-domain-direct')?.addEventListener('click', () => {
+    openProtectModal();
   });
 }
 

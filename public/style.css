@@ -1526,3 +1526,29 @@ input, textarea, select { font-family: var(--font); }
 }
 .copy-config-btn:hover { color: var(--text); background: var(--bg5); }
 
+/* ══════════════════════════════════════════════════════
+   INLINE SPINNER (for buttons)
+   ══════════════════════════════════════════════════════ */
+@keyframes spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+.spinner-inline {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,.25);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spinner-rotate .6s linear infinite;
+  vertical-align: middle;
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255,255,255,.15);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spinner-rotate .7s linear infinite;
+}

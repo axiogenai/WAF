@@ -457,7 +457,23 @@
     <div class="tab" id="tab-domains">
       <div class="page-header">
         <h1>Protected Sites</h1>
-        <p>Sites are added automatically when you scan a URL and click <strong>Enable WAF Protection</strong>. DNS CNAME instructions are shown instantly.</p>
+        <p>Register domains to protect them with ShieldWall's WAF. DNS CNAME instructions are shown instantly.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div>
+              <div style="font-weight:600;font-size:0.9rem">Add a new site to WAF protection</div>
+              <div style="font-size:0.75rem;color:var(--muted)">Point your domain's DNS to ShieldWall and all traffic will be inspected</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-add-domain-direct">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Domain
+          </button>
+        </div>
       </div>
 
 
